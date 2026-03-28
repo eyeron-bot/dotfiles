@@ -7,7 +7,7 @@
 - name: Backup SSH and GPG keys
   hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true
 
   tasks:
     - name: Read SSH private key

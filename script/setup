@@ -45,5 +45,46 @@ else
   echo "==> TPM already installed"
 fi
 
+# Set up ansible vault password for key backup/restore
+if [ ! -f "$DOTFILES_DIR/.vault_password" ]; then
+  echo "==> Setting up ansible vault password..."
+  echo "    This password encrypts your SSH and GPG key backups."
+  printf "Enter vault password: "
+  read -s vault_password
+  echo
+  echo "$vault_password" > "$DOTFILES_DIR/.vault_password"
+  chmod 600 "$DOTFILES_DIR/.vault_password"
+  echo "    Vault password saved to .vault_password"
+else
+  echo "==> Vault password already configured"
+fi
+
+# Restore keys from ansible vault if secrets exist
+if [ -f "$DOTFILES_DIR/.vault_password" ] && [ -f "$DOTFILES_DIR/ansible/vars/secrets.yml" ]; then
+  echo "==> Restoring SSH and GPG keys from ansible vault..."
+  ansible-playbook "$DOTFILES_DIR/ansible/restore-keys.yml" \
+    --vault-password-file "$DOTFILES_DIR/.vault_password"
+else
+  echo "==> No encrypted secrets found. Skipping key restoration."
+  echo "    To backup keys later: ansible-playbook ansible/backup-keys.yml --vault-password-file .vault_password"
+fi
+
+# Initialize pass with GPG key if not already set up
+if command -v pass &>/dev/null; then
+  if [ ! -d "$HOME/.password-store" ]; then
+    gpg_key_id=$(gpg --list-keys --with-colons 2>/dev/null | awk -F: '/^uid/{print $10; exit}')
+    if [ -n "$gpg_key_id" ]; then
+      echo "==> Initializing pass with GPG key..."
+      pass init "$gpg_key_id"
+    else
+      echo "==> No GPG key found. Skipping pass initialization."
+      echo "    Generate a key with: gpg --full-generate-key"
+      echo "    Then run: pass init <your-gpg-email>"
+    fi
+  else
+    echo "==> pass already initialized"
+  fi
+fi
+
 echo "==> Setup complete!"
 echo "    Run 'tmux' then press prefix + I to install tmux plugins."

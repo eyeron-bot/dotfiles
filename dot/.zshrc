@@ -13,3 +13,6 @@ source $ZSH/oh-my-zsh.sh
 
 # GPG TTY for signing
 export GPG_TTY=$(tty)
+
+alias cls="claude --dangerously-skip-permissions"
+alias lg=lazygit

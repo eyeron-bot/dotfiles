@@ -5,7 +5,7 @@
 - name: Restore SSH and GPG keys
   hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true
 
   vars_files:
     - vars/secrets.yml
