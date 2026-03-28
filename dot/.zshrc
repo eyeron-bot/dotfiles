@@ -16,3 +16,6 @@ export GPG_TTY=$(tty)
 
 alias cls="claude --dangerously-skip-permissions"
 alias lg=lazygit
+
+# mise - runtime version manager
+eval "$(mise activate zsh)"
