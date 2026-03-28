@@ -1,6 +1,7 @@
 brew "ansible"
 brew "gh"
 brew "gnupg"
+brew "lazygit"
 brew "pass"
 brew "pinentry-mac"
 brew "stow"
