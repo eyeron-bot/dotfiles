@@ -3,8 +3,14 @@ set -e
 
 DOTFILES_DIR="$HOME/.dotfiles"
 
+# Stow dotfiles first so ~/.Brewfile is in place
+echo "==> Stowing dotfiles..."
+brew install stow
+rm -f "$HOME/.zshrc" 2>/dev/null || true
+stow dot/ --dir="$DOTFILES_DIR" --target="$HOME"
+
 echo "==> Installing Brewfile dependencies..."
-brew bundle --file="$DOTFILES_DIR/Brewfile"
+brew bundle --global
 
 # Install oh-my-zsh if not already installed
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -31,9 +37,13 @@ else
   echo "==> zsh-syntax-highlighting already installed"
 fi
 
-# Stow dotfiles
-echo "==> Stowing dotfiles..."
-rm -f "$HOME/.zshrc" 2>/dev/null || true
-stow dot/ --dir="$DOTFILES_DIR" --target="$HOME"
+# Install TPM (Tmux Plugin Manager)
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  echo "==> Installing TPM..."
+  git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+else
+  echo "==> TPM already installed"
+fi
 
 echo "==> Setup complete!"
+echo "    Run 'tmux' then press prefix + I to install tmux plugins."

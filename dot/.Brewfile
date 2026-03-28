@@ -5,6 +5,7 @@ brew "gnupg"
 brew "pinentry-mac"
 brew "stow"
 brew "tmux"
+brew "tpm"
 
 # Casks
 cask "claude"
