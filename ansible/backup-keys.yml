@@ -1,0 +1,62 @@
+---
+# Backup SSH and GPG keys into an ansible-vault encrypted file.
+# Usage:
+#   ansible-playbook ansible/backup-keys.yml --vault-password-file .vault_password
+#
+# This reads your current keys and writes them into ansible/vars/secrets.yml (encrypted).
+- name: Backup SSH and GPG keys
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Read SSH private key
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+      register: ssh_private_key
+
+    - name: Read SSH public key
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
+      register: ssh_public_key
+
+    - name: Export GPG private keys
+      ansible.builtin.command:
+        cmd: gpg --export-secret-keys --armor
+      register: gpg_private_keys
+      changed_when: false
+      failed_when: false
+
+    - name: Export GPG public keys
+      ansible.builtin.command:
+        cmd: gpg --export --armor
+      register: gpg_public_keys
+      changed_when: false
+      failed_when: false
+
+    - name: Write encrypted secrets file
+      ansible.builtin.copy:
+        content: |
+          ---
+          ssh_private_key: |
+            {{ ssh_private_key.content | b64decode | indent(2) }}
+          ssh_public_key: "{{ ssh_public_key.content | b64decode | trim }}"
+          gpg_private_keys: |
+            {{ gpg_private_keys.stdout | default('') | indent(2) }}
+          gpg_public_keys: |
+            {{ gpg_public_keys.stdout | default('') | indent(2) }}
+        dest: "{{ playbook_dir }}/vars/secrets.yml"
+      vars:
+        ansible_vault_encrypt: true
+
+    - name: Encrypt the secrets file with ansible-vault
+      ansible.builtin.command:
+        cmd: >
+          ansible-vault encrypt
+          {{ playbook_dir }}/vars/secrets.yml
+          --vault-password-file {{ playbook_dir }}/../.vault_password
+      changed_when: true
+
+    - name: Done
+      ansible.builtin.debug:
+        msg: "Keys backed up to ansible/vars/secrets.yml (encrypted)"

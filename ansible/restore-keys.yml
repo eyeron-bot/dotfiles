@@ -1,0 +1,50 @@
+---
+# Restore SSH and GPG keys from ansible-vault encrypted file.
+# Usage:
+#   ansible-playbook ansible/restore-keys.yml --vault-password-file .vault_password
+- name: Restore SSH and GPG keys
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - vars/secrets.yml
+
+  tasks:
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.ssh"
+        state: directory
+        mode: "0700"
+
+    - name: Restore SSH private key
+      ansible.builtin.copy:
+        content: "{{ ssh_private_key }}"
+        dest: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+        mode: "0600"
+
+    - name: Restore SSH public key
+      ansible.builtin.copy:
+        content: "{{ ssh_public_key }}\n"
+        dest: "{{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
+        mode: "0644"
+
+    - name: Import GPG private keys
+      ansible.builtin.command:
+        cmd: gpg --import --batch
+        stdin: "{{ gpg_private_keys }}"
+      when: gpg_private_keys | length > 0
+      changed_when: true
+      failed_when: false
+
+    - name: Import GPG public keys
+      ansible.builtin.command:
+        cmd: gpg --import --batch
+        stdin: "{{ gpg_public_keys }}"
+      when: gpg_public_keys | length > 0
+      changed_when: true
+      failed_when: false
+
+    - name: Done
+      ansible.builtin.debug:
+        msg: "Keys restored successfully"

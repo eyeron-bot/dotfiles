@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+echo "==> Running post-Strap setup..."
+
+# Restore keys from ansible vault if vault password is available
+DOTFILES_DIR="$HOME/.dotfiles"
+if [ -f "$DOTFILES_DIR/.vault_password" ]; then
+  echo "==> Restoring keys from ansible vault..."
+  ansible-playbook "$DOTFILES_DIR/ansible/restore-keys.yml" \
+    --vault-password-file "$DOTFILES_DIR/.vault_password"
+else
+  echo "==> No vault password found. Skipping key restoration."
+  echo "    To restore keys, create $DOTFILES_DIR/.vault_password and run:"
+  echo "    ansible-playbook $DOTFILES_DIR/ansible/restore-keys.yml --vault-password-file $DOTFILES_DIR/.vault_password"
+fi
+
+echo "==> Post-Strap setup complete!"
